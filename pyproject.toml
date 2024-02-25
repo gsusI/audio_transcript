@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "audio_transcript"
+name = "audio-transcript-ai"
 version = "0.1.0"
 description = "A tool for transcribing audio files using OpenAI's API"
 authors = ["Jesus Iniesta <jesus.inica@gmail.com>"]

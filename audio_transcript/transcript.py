@@ -24,6 +24,9 @@ To enable autocomplete in your shell, follow these instructions:
     parser.add_argument('--audio_segment_dir', type=str, default='segmented_audio', help='Path to the directory where audio segments will be stored. Defaults to a folder named "segmented_audio" in the current directory.')
     parser.add_argument('--overlap_duration', type=int, default=30, help='Duration in seconds of how much each audio segment should overlap with the next one. Helps in ensuring continuity in transcriptions. Defaults to 30 seconds.')
     parser.add_argument('--segment_duration', type=int, default=300, help='Total duration in seconds for each audio segment, including the overlap duration. For example, with a default of 300 seconds and an overlap of 30 seconds, each segment will be 5 minutes long with the last 30 seconds repeated in the next segment. Defaults to 300 seconds.')
+    parser.add_argument('--remove_silences', action='store_true', default=True, help='Enables the removal of silences from the audio file before processing. Defaults to True.')
+    parser.add_argument('--remove_silences_threshold', type=int, default=0.5, help='Duration in seconds of the silence threshold for removal. Silences longer than this threshold will be reduced to the threshold duration. Defaults to 2 seconds.')
+    parser.add_argument('--audio_speed', type=float, default=1.0, help='Speed at which the audio will be played back for transcription. Defaults to 1x speed. Based on initial testing, speeds greater than 2x are not recommended as they may compromise transcription accuracy.')
     parser.add_argument('--test', action='store_true', help='Enables test mode to process a limited number of audio chunks, useful for quick checks.')
     parser.add_argument('--test_chunks', type=int, default=7, help='Specifies the number of audio chunks to process in test mode. Only effective if --test is enabled. Defaults to 7 chunks.')
     parser.add_argument('--verbose', action='store_true', help='Enables verbose output, providing detailed logs of the script\'s operations. Useful for debugging or understanding the script\'s progress.')
@@ -41,13 +44,46 @@ def generate_file_hash(file_path):
             hash_md5.update(chunk)
     return hash_md5.hexdigest()
 
-def segment_audio_with_overlap(source_file, segment_dir, segment_duration, overlap_duration, verbose=False):
+def remove_silences_from_audio(source_file, threshold):
+    """Remove silences from the audio file, dynamically determining the dB level for silence removal."""
+    print(f"Removing silences from audio with threshold {threshold} seconds")
+    temp_file = f"{source_file}.temp.mp3"
+    # Dynamically determine the dB level for silence removal with reduced verbosity
+    analyze_cmd = f"ffmpeg -i {source_file} -af silencedetect=n=-30dB:d=0.5 -f null - -hide_banner -loglevel error"
+    result = subprocess.check_output(analyze_cmd, shell=True, text=True)
+    silence_db = "-30dB"  # Default value
+    for line in result.split('\n'):
+        if "silencedetect" in line and "silence_start" in line:
+            silence_db = line.split(" ")[4]
+            break
+    # Corrected silenceremove filter usage with overwrite without prompt and reduced verbosity
+    silence_cmd = f"ffmpeg -y -i {source_file} -af silenceremove=1:0:{silence_db} {temp_file} -hide_banner -loglevel error"
+    subprocess.call(silence_cmd, shell=True)
+    return temp_file
+
+def adjust_audio_speed(source_file, speed):
+    """Adjust the playback speed of the audio file with reduced verbosity."""
+    print(f"Adjusting audio speed to {speed}x")
+    if speed == 1.0:  # No need to adjust if speed is 1x
+        return source_file
+    adjusted_file = f"{source_file}.adjusted.mp3"
+    # Adjust audio speed with overwrite without prompt and reduced verbosity
+    adjust_cmd = f"ffmpeg -y -i {source_file} -filter:a \"atempo={speed}\" -vn {adjusted_file} -hide_banner -loglevel error"
+    subprocess.call(adjust_cmd, shell=True)
+    return adjusted_file
+
+def segment_audio_with_overlap(source_file, segment_dir, segment_duration, overlap_duration, remove_silences, remove_silences_threshold, audio_speed, verbose=False):
+    if remove_silences:
+        source_file = remove_silences_from_audio(source_file, remove_silences_threshold)
+    source_file = adjust_audio_speed(source_file, audio_speed)
     if not os.path.exists(segment_dir):
         os.makedirs(segment_dir)
     segment_cmd = f"ffmpeg -i {source_file} -f segment -segment_time {segment_duration - overlap_duration} -c copy -reset_timestamps 1 -map 0 {segment_dir}/segment_%03d.mp3"
     if verbose:
         print(f"Segmenting audio with command: {segment_cmd}")
     subprocess.call(segment_cmd, shell=True)
+    # if remove_silences:
+    #     os.remove(source_file)  # Clean up temporary file
 
 def transcribe_audio(file_path, openai_api_key, verbose=False):
     file_hash = generate_file_hash(file_path)
@@ -89,7 +125,7 @@ def main():
     if not openai_api_key:
         sys.exit('Error: OPENAI_API_KEY environment variable not set or not passed as an argument.')
     
-    segment_audio_with_overlap(args.source_audio_file, args.audio_segment_dir, args.segment_duration, args.overlap_duration, args.verbose)
+    segment_audio_with_overlap(source_file=args.source_audio_file, segment_dir=args.audio_segment_dir, segment_duration=args.segment_duration, overlap_duration=args.overlap_duration, remove_silences=args.remove_silences, remove_silences_threshold=args.remove_silences_threshold, audio_speed=args.audio_speed, verbose=args.verbose)
     transcripts = []
     segment_files = sorted([file for file in os.listdir(args.audio_segment_dir) if file.endswith('.mp3')])
     if args.test:

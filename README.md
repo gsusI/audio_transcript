@@ -1,7 +1,6 @@
 # Audio Transcript
 
-Audio Transcript is a powerful tool designed to transcribe audio files using OpenAI's API. It segments the audio, transcribes the segments, and then concatenates the transcriptions to provide a comprehensive transcript of the audio file. This tool is designed with efficiency in mind, allowing for rapid transcription of large audio files by breaking them down into manageable segments. It leverages the OpenAI API for accurate transcription and supports a variety of audio formats.
-
+Audio Transcript is an advanced tool that transcribes audio files using OpenAI's API. It not only segments the audio for manageable processing but also offers features like silence removal and speed adjustment to minimies the cost of transcribing. After processing, it seamlessly concatenates the transcriptions to deliver a complete and coherent transcript of the entire audio file. Designed for high efficiency, it facilitates the rapid transcription of extensive audio files by optimizing the transcription process. It utilizes the OpenAI API for precise transcription and accommodates a wide range of audio formats.
 ## Installation
 
 To get Audio Transcript up and running, you've got two straightforward options: pip install or direct setup. Pick the one that suits you best.
@@ -55,5 +54,15 @@ transcribe-audio --help
 A typical command might look like this:
 
 ```
-transcribe-audio --source_audio_file path/to/your/audio/file.mp3 --audio_segment_dir path/to/segment/dir --segment_duration 300 --overlap_duration 30 --output_file path/to/output/transcript.txt
+transcribe-audio --source_audio_file path/to/your/audio/file.mp3 --audio_segment_dir path/to/segment/dir --segment_duration 300 --overlap_duration 30 --remove_silences --remove_silences_threshold 0.5 --audio_speed 1.0 --output_file path/to/output/transcript.txt
 ```
+
+To ensure the best balance between transcription speed and accuracy, it's crucial to find the optimal audio playback speed. While increasing the speed can reduce transcription time and potentially minimize costs, setting the speed too high may lead to inaccurate transcriptions or even nonsensical results. To determine the most effective speed for your audio files, follow these steps:
+
+1. Use the `--test` and `--test_chunks` options set to `1` to transcribe only the first chunk of your audio at various speeds. This approach allows you to compare the accuracy of transcriptions at different speeds without processing the entire file.
+
+2. Set the `--segment_duration` to a short duration, such as `30` seconds, for these tests. This ensures that the test runs quickly and focuses on a manageable portion of the audio.
+
+3. Start by running the transcription at the default speed (`1.0x`). Use the following command as a template, adjusting the `--source_audio_file` and `--output_file` paths as necessary.
+
+4. Once the transcription is complete, review the results and assess the accuracy of the transcription. If the results are satisfactory, you can proceed with the full transcription at the same speed. If not, you can adjust the speed and repeat the process until you find the optimal speed for your audio file.

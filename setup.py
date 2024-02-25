@@ -1,8 +1,8 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="audio_transcript",
-    version="0.1.0",
+    name="transcraipt",
+    version="0.1.3",
     author="Jesus Iniesta",
     author_email="jesus.inica@gmail.com",
     description="A tool for transcribing audio files using OpenAI's API",
@@ -18,7 +18,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'transcribe-audio=audio_transcript.transcript:main',
+            'transcraipt=ai_transcript.transcript:main',
         ],
     },
     classifiers=[
