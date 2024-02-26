@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="transcraipt",
-    version="0.1.3",
+    version="0.1.5",
     author="Jesus Iniesta",
     author_email="jesus.inica@gmail.com",
     description="A tool for transcribing audio files using OpenAI's API",
@@ -18,7 +18,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'transcraipt=ai_transcript.transcript:main',
+            'transcraipt=transcraipt.transcript:main',
         ],
     },
     classifiers=[
