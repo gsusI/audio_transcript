@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="transcraipt",
-    version="0.1.5",
+    version="0.1.73",
     author="Jesus Iniesta",
     author_email="jesus.inica@gmail.com",
     description="A tool for transcribing audio files using OpenAI's API",
